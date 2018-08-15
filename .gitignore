@@ -3,3 +3,6 @@
 /.settings/*
 /bin/*
 /data/lda/model/*
+*.class
+*.txt
+*.txt

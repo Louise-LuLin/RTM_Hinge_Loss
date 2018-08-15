@@ -35,7 +35,18 @@ public class LDAResult
 		case PLR: printAvg(message, plr); break;
 		}
 	}
-	
+
+	public double getPerplexity() {
+		double avg=0.0;
+		for (double value : perplexity)
+		{
+			Util.println(value);
+			avg+=value;
+		}
+		avg/=(double)perplexity.size();
+		return avg;
+	}
+
 	public static void printAvg(String message, ArrayList<Double> values)
 	{
 		if (values.size()==0) return;

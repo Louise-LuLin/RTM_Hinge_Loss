@@ -26,7 +26,7 @@ public class LDADoc
 			if (seg[i].length()==0) continue;
 			segseg=seg[i].split(":");
 			int word=Integer.valueOf(segseg[0]);
-			int count=Integer.valueOf(segseg[1]);
+			double count=Double.valueOf(segseg[1]);
 			assert(word>=0 && word<numVocab);
 			for (int j=0; j<count; j++)
 			{

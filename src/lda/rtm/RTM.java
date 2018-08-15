@@ -1,9 +1,6 @@
 package lda.rtm;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +12,7 @@ import lda.LDAConfig;
 import lda.LDAParam;
 import lda.rtm.util.RTMDocProb;
 import lda.rtm.util.RTMFunction;
+import structure.TopicModelParameter;
 import utility.MathUtil;
 import utility.Util;
 import cc.mallet.optimize.LimitedMemoryBFGS;
@@ -388,10 +386,69 @@ public class RTM extends LDA
 	{
 		super(modelFileName, parameters);
 	}
-	
+
+	public void setNumTopic(int num){ this.param.numTopics = num;}
+
 	public static void main(String args[]) throws Exception
 	{
-		String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
+        TopicModelParameter param2 = new TopicModelParameter(args);
+
+        String folder = String.format("%s/%s/%s", param2.m_prefix, param2.m_source, param2.m_set);
+        String fvFile = String.format("%s/%s/%s_features.txt", param2.m_prefix, param2.m_source, param2.m_source);
+        String inputFolder = String.format("%s/RTM/", folder);
+
+        String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
+        String modelName=seg[seg.length-1];
+        LDAParam parameters=new LDAParam(fvFile);
+        LDAResult trainResults=new LDAResult();
+        LDAResult testResults=new LDAResult();
+
+        double[] perf = new double[param2.m_crossV];
+        for(int i = 0; i < param2.m_crossV; i++) {
+            String trainCorpusFileName = String.format("%s_%s_corpus_train_%d.txt", param2.m_source, param2.m_mode, i);
+            String trainLinkFileName = String.format("%s_%s_link_train_%d.txt", param2.m_source, param2.m_mode, i);
+            RTM RTMTrain = new RTM(parameters);
+            RTMTrain.setNumTopic(param2.m_number_of_topics);
+            RTMTrain.readCorpus(trainCorpusFileName);
+            RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
+            RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
+            RTMTrain.sample(LDAConfig.numTrainIters);
+            RTMTrain.addResults(trainResults);
+            if (LDAConfig.SLModel) {
+                RTMTrain.writeModel(LDAConfig.getModelFileName(modelName));
+            }
+
+            String testCorpusFileName = String.format("%s_%s_corpus_test_%d.txt", param2.m_source, param2.m_mode, i);
+            String testTrainLinkFileName = String.format("%s_%s_link_test_train_%d.txt", param2.m_source, param2.m_mode, i);
+            String testTestLinkFileName = String.format("%s_%s_link_test_test_%d.txt", param2.m_source, param2.m_mode, i);
+            RTM RTMTest = (LDAConfig.SLModel ?
+                    new RTM(LDAConfig.getModelFileName(modelName), parameters) :
+                    new RTM(RTMTrain, parameters));
+            RTMTest.setNumTopic(param2.m_number_of_topics);
+            RTMTest.readCorpus(testCorpusFileName);
+            RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
+            RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
+            RTMTest.sample(LDAConfig.numTestIters);
+            RTMTest.addResults(testResults);
+
+            trainResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
+            testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
+            perf[i] = testResults.getPerplexity();
+        }
+
+        double mean=0;
+        double var=0;
+        for (int i = 0; i < perf.length; i++) {
+            mean += perf[i];
+        }
+        mean /= perf.length;
+        for (int i = 0; i < perf.length; i++) {
+            var += (perf[i] - mean) * (perf[i] - mean);
+        }
+        var = Math.sqrt(var / perf.length);
+        System.out.format("[Stat]Perplexity %.3f+/-%.3f\n", mean, var);
+
+		/*String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
 		String modelName=seg[seg.length-1];
 		LDAParam parameters=new LDAParam(LDAConfig.vocabFileName);
 		LDAResult trainResults=new LDAResult();
@@ -417,7 +474,7 @@ public class RTM extends LDA
 		RTMTest.sample(LDAConfig.numTestIters);
 		RTMTest.addResults(testResults);
 		
-		trainResults.printResults(modelName+" Training PLR: ", LDAResult.PLR);
-		testResults.printResults(modelName+" Test PLR: ", LDAResult.PLR);
+		trainResults.printResults(modelName+" Test PPX: ", LDAResult.PERPLEXITY);
+		testResults.printResults(modelName+" Test PPX: ", LDAResult.PERPLEXITY);*/
 	}
 }
