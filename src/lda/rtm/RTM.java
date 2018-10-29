@@ -153,6 +153,8 @@ public class RTM extends LDA
 		{
 			word=doc.getWord(token);
 			oldTopic=doc.getTopicAssign(token);
+			if(oldTopic<0 || oldTopic >= param.numTopics)
+			    continue;
 			if (topics.get(oldTopic).totalTokens==0) continue;
 			
 			doc.topicCounts[oldTopic]--;
@@ -172,6 +174,8 @@ public class RTM extends LDA
 			}
 			
 			newTopic=MathUtil.selectDiscrete(topicScores);
+            if(newTopic < 0 || newTopic >= param.numTopics)
+                continue;
 			
 			doc.setTopicAssign(token, newTopic);
 			doc.topicCounts[newTopic]++;
@@ -364,14 +368,24 @@ public class RTM extends LDA
 		eta=new double[param.numTopics];
 	}
 	
-	public RTM(LDAParam parameters)
+	public RTM(LDAParam parameters, int num)
 	{
 		super(parameters);
+		param.numTopics = num;
 		for (int topic=0; topic<param.numTopics; topic++)
 		{
 			eta[topic]=randoms.nextGaussian(0.0, MathUtil.sqr(param.nu));
 		}
 	}
+
+    public RTM(LDAParam parameters)
+    {
+        super(parameters);
+        for (int topic=0; topic<param.numTopics; topic++)
+        {
+            eta[topic]=randoms.nextGaussian(0.0, MathUtil.sqr(param.nu));
+        }
+    }
 	
 	public RTM(RTM RTMTrain, LDAParam parameters)
 	{
@@ -395,20 +409,20 @@ public class RTM extends LDA
 
         String folder = String.format("%s/%s/%s", param2.m_prefix, param2.m_source, param2.m_set);
         String fvFile = String.format("%s/%s/%s_features.txt", param2.m_prefix, param2.m_source, param2.m_source);
-        String inputFolder = String.format("%s/RTM/", folder);
+        String inputFolder = String.format("%s/RTM", folder);
 
-        String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
-        String modelName=seg[seg.length-1];
-        LDAParam parameters=new LDAParam(fvFile);
-        LDAResult trainResults=new LDAResult();
-        LDAResult testResults=new LDAResult();
+        String seg[] = Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
+        String modelName = seg[seg.length - 1];
+        LDAParam parameters = new LDAParam(fvFile);
+        parameters.numTopics = param2.m_number_of_topics;
+        LDAResult trainResults = new LDAResult();
+        LDAResult testResults = new LDAResult();
 
         double[] perf = new double[param2.m_crossV];
-        for(int i = 0; i < param2.m_crossV; i++) {
-            String trainCorpusFileName = String.format("%s_%s_corpus_train_%d.txt", param2.m_source, param2.m_mode, i);
-            String trainLinkFileName = String.format("%s_%s_link_train_%d.txt", param2.m_source, param2.m_mode, i);
+        for (int i = 0; i < param2.m_crossV; i++) {
+            String trainCorpusFileName = String.format("%s/corpus_train_%d.txt", inputFolder, i);
+            String trainLinkFileName = String.format("%s/link_train_%d.txt", inputFolder, i);
             RTM RTMTrain = new RTM(parameters);
-            RTMTrain.setNumTopic(param2.m_number_of_topics);
             RTMTrain.readCorpus(trainCorpusFileName);
             RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
             RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
@@ -418,13 +432,12 @@ public class RTM extends LDA
                 RTMTrain.writeModel(LDAConfig.getModelFileName(modelName));
             }
 
-            String testCorpusFileName = String.format("%s_%s_corpus_test_%d.txt", param2.m_source, param2.m_mode, i);
-            String testTrainLinkFileName = String.format("%s_%s_link_test_train_%d.txt", param2.m_source, param2.m_mode, i);
-            String testTestLinkFileName = String.format("%s_%s_link_test_test_%d.txt", param2.m_source, param2.m_mode, i);
+            String testCorpusFileName = String.format("%s/corpus_test_%d.txt", inputFolder, i);
+            String testTrainLinkFileName = String.format("%s/link_test_train_%d.txt", inputFolder, i);
+            String testTestLinkFileName = String.format("%s/link_test_test_%d.txt", inputFolder, i);
             RTM RTMTest = (LDAConfig.SLModel ?
                     new RTM(LDAConfig.getModelFileName(modelName), parameters) :
                     new RTM(RTMTrain, parameters));
-            RTMTest.setNumTopic(param2.m_number_of_topics);
             RTMTest.readCorpus(testCorpusFileName);
             RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
             RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
@@ -436,16 +449,26 @@ public class RTM extends LDA
             perf[i] = testResults.getPerplexity();
         }
 
-        double mean=0;
-        double var=0;
+        double mean = 0;
+        double var = 0;
+        int invalid = 0;
         for (int i = 0; i < perf.length; i++) {
+            if (Double.isNaN(perf[i]) || Double.isInfinite(perf[i])) {
+                invalid += 1;
+                continue;
+            }
             mean += perf[i];
         }
-        mean /= perf.length;
+        int valid = perf.length - invalid;
+        mean = valid > 0 ? mean / valid : 0;
         for (int i = 0; i < perf.length; i++) {
+            if (Double.isNaN(perf[i]) || Double.isInfinite(perf[i])) {
+                continue;
+            }
             var += (perf[i] - mean) * (perf[i] - mean);
         }
-        var = Math.sqrt(var / perf.length);
+        var = valid > 0 ? Math.sqrt(var / valid) : 0;
+
         System.out.format("[Stat]Perplexity %.3f+/-%.3f\n", mean, var);
 
 		/*String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
