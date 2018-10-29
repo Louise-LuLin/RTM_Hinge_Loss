@@ -426,7 +426,7 @@ public class RTM extends LDA
             RTMTrain.readCorpus(trainCorpusFileName);
             RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
             RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
-            RTMTrain.sample(LDAConfig.numTrainIters);
+            RTMTrain.sample(param2.m_emIter);
             RTMTrain.addResults(trainResults);
             if (LDAConfig.SLModel) {
                 RTMTrain.writeModel(LDAConfig.getModelFileName(modelName));
@@ -441,7 +441,7 @@ public class RTM extends LDA
             RTMTest.readCorpus(testCorpusFileName);
             RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
             RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-            RTMTest.sample(LDAConfig.numTestIters);
+            RTMTest.sample(param2.m_varMaxIter);
             RTMTest.addResults(testResults);
 
             trainResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
