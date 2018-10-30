@@ -32,6 +32,8 @@ public class LDAParam
 		String line;
 		while ((line=br.readLine())!=null)
 		{
+			if(line.length() < 0 || line.startsWith("#"))
+				continue;
 			vocabulary.add(line);
 		}
 		br.close();
