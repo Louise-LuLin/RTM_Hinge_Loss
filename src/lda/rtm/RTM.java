@@ -308,19 +308,52 @@ public class RTM extends LDA
 		bw.close();
 	}
 	
-	public void writeTopicCounts(String topicCountFileName) throws Exception
+	public void writeUserEmbed(String topicCountFileName, String userIdIdxFileName) throws Exception
 	{
+        HashMap<Integer, String> Idx_Id_map = new HashMap<>();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(userIdIdxFileName), "UTF-8"));
+        String line;
+        while((line = reader.readLine()) != null) {
+            if(line.length() < 1)
+                continue;
+            String[] strs = line.split("\t");
+            Idx_Id_map.put(Integer.valueOf(strs[0]), strs[1]);
+        }
+        reader.close();
+        System.out.format("[Info]load %d user idx-id pair from %s\n", Idx_Id_map.size(), userIdIdxFileName);
+
 		BufferedWriter bw=new BufferedWriter(new FileWriter(topicCountFileName));
+        bw.write(String.format("%d\t%d\n", numDocs, param.numTopics));
 		for (int doc=0; doc<numDocs; doc++)
 		{
+            if(!Idx_Id_map.containsKey(doc)) {
+                System.err.format("[err]doc %d not exist in userIdIdxFile %s.\n", doc, userIdIdxFileName);
+                return;
+            }
+            bw.write(Idx_Id_map.get(doc));
 			for (int topic=0; topic<param.numTopics; topic++)
 			{
-				bw.write(corpus.get(doc).topicCounts[topic]+" ");
+				bw.write("\t" + corpus.get(doc).topicCounts[topic]);
 			}
-			bw.newLine();
+			bw.write("\n");
 		}
 		bw.close();
 	}
+
+    public void writeTopicCounts(String topicCountFileName) throws Exception
+    {
+        BufferedWriter bw=new BufferedWriter(new FileWriter(topicCountFileName));
+        bw.write(String.format("%d\t%d\n", numDocs, param.numTopics));
+        for (int doc=0; doc<numDocs; doc++)
+        {
+            for (int topic=0; topic<param.numTopics; topic++)
+            {
+                bw.write(corpus.get(doc).topicCounts[topic]+" ");
+            }
+            bw.write("\n");
+        }
+        bw.close();
+    }
 	
 	public void getNumTestWords()
 	{
@@ -405,43 +438,52 @@ public class RTM extends LDA
 
 	public static void main(String args[]) throws Exception
 	{
-        TopicModelParameter param2 = new TopicModelParameter(args);
+        TopicModelParameter param = new TopicModelParameter(args);
 
-        String folder = String.format("%s/%s/%s", param2.m_prefix, param2.m_source, param2.m_set);
-        String fvFile = String.format("%s/%s/%s_features.txt", param2.m_prefix, param2.m_source, param2.m_source);
+        String folder = String.format("%s/%s/%s", param.m_prefix, param.m_source, param.m_set);
+        String fvFile = String.format("%s/%s/%s_features.txt", param.m_prefix, param.m_source, param.m_source);
         String inputFolder = String.format("%s/RTM", folder);
+        String outputFolder = String.format("%s/output/%s/%s/", param.m_prefix, param.m_source, param.m_set);
 
         String seg[] = Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
         String modelName = seg[seg.length - 1];
         LDAParam parameters = new LDAParam(fvFile);
-        parameters.numTopics = param2.m_number_of_topics;
+        parameters.numTopics = param.m_number_of_topics;
         LDAResult trainResults = new LDAResult();
         LDAResult testResults = new LDAResult();
 
-        double[] perf = new double[param2.m_crossV];
-        for (int i = 0; i < param2.m_crossV; i++) {
-            String trainCorpusFileName = String.format("%s/corpus_train_%d.txt", inputFolder, i);
-            String trainLinkFileName = String.format("%s/link_train_%d.txt", inputFolder, i);
+        double[] perf = new double[param.m_crossV];
+        for (int i = 0; i < param.m_crossV; i++) {
+            String trainCorpusFileName = String.format("%s/%s_corpus_train_%d.txt", inputFolder, param.m_mode, i);
+            String trainLinkFileName = String.format("%s/%s_link_train_%d.txt", inputFolder, param.m_mode, i);
+            String userIdIdxFileName = String.format("%s/%s_userId_train_%d.txt", inputFolder, param.m_mode, i);
+
+            String modelFileName = String.format("%s/%d/%s_RTM_model_%d.txt",
+                    outputFolder, i, param.m_mode, param.m_number_of_topics);
+            String userEmbedFileName = String.format("%s/%d/%s_RTM_userEmbed_%d.txt",
+                    outputFolder, i, param.m_mode, param.m_number_of_topics);
+
             RTM RTMTrain = new RTM(parameters);
             RTMTrain.readCorpus(trainCorpusFileName);
             RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
             RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
-            RTMTrain.sample(param2.m_emIter);
+            RTMTrain.sample(param.m_emIter);
             RTMTrain.addResults(trainResults);
             if (LDAConfig.SLModel) {
-                RTMTrain.writeModel(LDAConfig.getModelFileName(modelName));
+                RTMTrain.writeModel(modelFileName);
             }
+            RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
 
             String testCorpusFileName = String.format("%s/corpus_test_%d.txt", inputFolder, i);
             String testTrainLinkFileName = String.format("%s/link_test_train_%d.txt", inputFolder, i);
             String testTestLinkFileName = String.format("%s/link_test_test_%d.txt", inputFolder, i);
             RTM RTMTest = (LDAConfig.SLModel ?
-                    new RTM(LDAConfig.getModelFileName(modelName), parameters) :
+                    new RTM(modelFileName, parameters) :
                     new RTM(RTMTrain, parameters));
             RTMTest.readCorpus(testCorpusFileName);
             RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
             RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-            RTMTest.sample(param2.m_varMaxIter);
+            RTMTest.sample(param.m_varMaxIter);
             RTMTest.addResults(testResults);
 
             trainResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
