@@ -333,7 +333,7 @@ public class RTM extends LDA
             bw.write(Idx_Id_map.get(doc));
 			for (int topic=0; topic<param.numTopics; topic++)
 			{
-				bw.write("\t" + corpus.get(doc).topicCounts[topic]);
+				bw.write("\t" + corpus.get(doc).topicCounts[topic]/corpus.get(doc).docLength());
 			}
 			bw.write("\n");
 		}
