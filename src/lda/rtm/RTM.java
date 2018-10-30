@@ -474,9 +474,9 @@ public class RTM extends LDA
             }
             RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
 
-            String testCorpusFileName = String.format("%s/corpus_test_%d.txt", inputFolder, i);
-            String testTrainLinkFileName = String.format("%s/link_test_train_%d.txt", inputFolder, i);
-            String testTestLinkFileName = String.format("%s/link_test_test_%d.txt", inputFolder, i);
+            String testCorpusFileName = String.format("%s/%s_corpus_test_%d.txt", inputFolder, param.m_mode, i);
+            String testTrainLinkFileName = String.format("%s/%s_link_test_train_%d.txt", inputFolder, param.m_mode, i);
+            String testTestLinkFileName = String.format("%s/%s_link_test_test_%d.txt", inputFolder, param.m_mode, i);
             RTM RTMTest = (LDAConfig.SLModel ?
                     new RTM(modelFileName, parameters) :
                     new RTM(RTMTrain, parameters));
