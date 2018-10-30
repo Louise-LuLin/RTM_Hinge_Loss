@@ -454,6 +454,7 @@ public class RTM extends LDA
 
         double[] perf = new double[param.m_crossV];
         for (int i = 0; i < param.m_crossV; i++) {
+            System.out.format("====== Fold %s =====\n", i);
             String trainCorpusFileName = String.format("%s/%s_corpus_train_%d.txt", inputFolder, param.m_mode, i);
             String trainLinkFileName = String.format("%s/%s_link_train_%d.txt", inputFolder, param.m_mode, i);
             String userIdIdxFileName = String.format("%s/%s_userId_train_%d.txt", inputFolder, param.m_mode, i);
