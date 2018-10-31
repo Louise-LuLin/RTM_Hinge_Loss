@@ -455,14 +455,15 @@ public class RTM extends LDA
         double[] perf = new double[param.m_crossV];
         for (int i = 0; i < param.m_crossV; i++) {
             System.out.format("====== Fold %s =====\n", i);
-            String trainCorpusFileName = String.format("%s/%s_corpus_train_%d.txt", inputFolder, param.m_mode, i);
-            String trainLinkFileName = String.format("%s/%s_link_train_%d.txt", inputFolder, param.m_mode, i);
-            String userIdIdxFileName = String.format("%s/%s_userId_train_%d.txt", inputFolder, param.m_mode, i);
+            String coldFlagStr = param.m_flag_coldstart?"_coldstart":"";
+            String trainCorpusFileName = String.format("%s/%s%s_corpus_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+            String trainLinkFileName = String.format("%s/%s%s_link_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+            String userIdIdxFileName = String.format("%s/%s%s_userId_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
 
-            String modelFileName = String.format("%s/%d/%s_RTM_model_%d.txt",
-                    outputFolder, i, param.m_mode, param.m_number_of_topics);
-            String userEmbedFileName = String.format("%s/%d/RTM_userEmbed_%d.txt",
-                    outputFolder, i, param.m_number_of_topics);
+            String modelFileName = String.format("%s/%d/%s%s_RTM_model_%d.txt",
+                    outputFolder, i, param.m_mode, coldFlagStr, param.m_number_of_topics);
+            String userEmbedFileName = String.format("%s/%d/RTM_userEmbed_%d%s.txt",
+                    outputFolder, i, param.m_number_of_topics, coldFlagStr);
             (new File(userEmbedFileName)).getParentFile().mkdirs();
 
             RTM RTMTrain = new RTM(parameters);
@@ -474,12 +475,14 @@ public class RTM extends LDA
             if (LDAConfig.SLModel) {
                 RTMTrain.writeModel(modelFileName);
             }
-			if(param.m_mode.equals("CVlink"))
-            	RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
+			if(param.m_mode.equals("CVlink")) {
+                RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
+                continue;
+            }
 
-            String testCorpusFileName = String.format("%s/%s_corpus_test_%d.txt", inputFolder, param.m_mode, i);
-            String testTrainLinkFileName = String.format("%s/%s_link_test_train_%d.txt", inputFolder, param.m_mode, i);
-            String testTestLinkFileName = String.format("%s/%s_link_test_test_%d.txt", inputFolder, param.m_mode, i);
+            String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+            String testTrainLinkFileName = String.format("%s/%s%s_link_test_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+            String testTestLinkFileName = String.format("%s/%s%s_link_test_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
             RTM RTMTest = (LDAConfig.SLModel ?
                     new RTM(modelFileName, parameters) :
                     new RTM(RTMTrain, parameters));
