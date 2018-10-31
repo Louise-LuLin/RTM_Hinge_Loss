@@ -461,8 +461,8 @@ public class RTM extends LDA
 
             String modelFileName = String.format("%s/%d/%s_RTM_model_%d.txt",
                     outputFolder, i, param.m_mode, param.m_number_of_topics);
-            String userEmbedFileName = String.format("%s/%d/%s_RTM_userEmbed_%d.txt",
-                    outputFolder, i, param.m_mode, param.m_number_of_topics);
+            String userEmbedFileName = String.format("%s/%d/RTM_userEmbed_%d.txt",
+                    outputFolder, i, param.m_number_of_topics);
 
             RTM RTMTrain = new RTM(parameters);
             RTMTrain.readCorpus(trainCorpusFileName);
@@ -473,7 +473,8 @@ public class RTM extends LDA
             if (LDAConfig.SLModel) {
                 RTMTrain.writeModel(modelFileName);
             }
-            RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
+			if(param.m_mode.equals("CVlink"))
+            	RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
 
             String testCorpusFileName = String.format("%s/%s_corpus_test_%d.txt", inputFolder, param.m_mode, i);
             String testTrainLinkFileName = String.format("%s/%s_link_test_train_%d.txt", inputFolder, param.m_mode, i);
