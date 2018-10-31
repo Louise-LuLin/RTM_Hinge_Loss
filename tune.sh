@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 read -p "Enter source, mode:" source mode
 echo
 for (( k=5; k<=50; k+5 ))
