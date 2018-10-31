@@ -1,7 +1,7 @@
 #!/bin/bash
-read -p "Enter source, mode:" source mode
+read -p "Enter source, mode, coldstart: " source mode cold
 echo
 for k in {5..50..5}
 do
-	nohup ./run -prefix ~/lab/dataset -source $source -set byUser_20k_review -crossV 5 -nuOfTopics $k -emIter 50 -topicmodel RTM -mode $mode > ./output/"$mode"_"$source"_RTM_"$k".output 2>&1 &
+	nohup ./run -prefix ~/lab/dataset -source $source -set byUser_20k_review -crossV 5 -nuOfTopics $k -emIter 50 -topicmodel RTM -mode $mode -flagColdstart $cold > ./output/"$mode"_"$cold"_"$source"_RTM_"$k".output 2>&1 &
 done
