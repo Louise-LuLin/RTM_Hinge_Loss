@@ -1,0 +1,2 @@
+#!/bin/sh
+java -Xmx8G -Xms2G -cp bin:lib/mallet.jar lda.rtm.RTM $@
