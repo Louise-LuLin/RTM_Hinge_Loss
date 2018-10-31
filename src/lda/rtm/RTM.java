@@ -461,8 +461,9 @@ public class RTM extends LDA
 
             String modelFileName = String.format("%s/%d/%s_RTM_model_%d.txt",
                     outputFolder, i, param.m_mode, param.m_number_of_topics);
-            String userEmbedFileName = String.format("%s/%d/RTM_userEmbed_%d.txt",
-                    outputFolder, i, param.m_number_of_topics);
+            String userEmbedFileName = String.format("%s/%d/%s_RTM_userEmbed_%d.txt",
+                    outputFolder, i, param.m_mode, param.m_number_of_topics);
+            (new File(userEmbedFileName)).getParentFile().mkdirs();
 
             RTM RTMTrain = new RTM(parameters);
             RTMTrain.readCorpus(trainCorpusFileName);
