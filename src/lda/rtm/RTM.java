@@ -466,33 +466,52 @@ public class RTM extends LDA
                     outputFolder, i, param.m_number_of_topics, coldFlagStr);
             (new File(userEmbedFileName)).getParentFile().mkdirs();
 
-            RTM RTMTrain = new RTM(parameters);
-            RTMTrain.readCorpus(trainCorpusFileName);
-            RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
-            RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
-            RTMTrain.sample(param.m_emIter);
-            RTMTrain.addResults(trainResults);
-            if (LDAConfig.SLModel) {
-                RTMTrain.writeModel(modelFileName);
-            }
-			if(param.m_mode.equals("CVlink")) {
-                RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
-                continue;
-            }
+            if(param.m_topicmodel.equals("RTM")) {
+				RTM RTMTrain = new RTM(parameters);
+				RTMTrain.readCorpus(trainCorpusFileName);
+				RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
+				RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
+				RTMTrain.sample(param.m_emIter);
+				RTMTrain.addResults(trainResults);
+				if (LDAConfig.SLModel) {
+					RTMTrain.writeModel(modelFileName);
+				}
+				if (param.m_mode.equals("CVlink")) {
+					RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
+					continue;
+				}
 
-            String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-            String testTrainLinkFileName = String.format("%s/%s%s_link_test_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-            String testTestLinkFileName = String.format("%s/%s%s_link_test_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-            RTM RTMTest = (LDAConfig.SLModel ?
-                    new RTM(modelFileName, parameters) :
-                    new RTM(RTMTrain, parameters));
-            RTMTest.readCorpus(testCorpusFileName);
-            RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
-            RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-            RTMTest.sample(param.m_varMaxIter);
-            RTMTest.addResults(testResults);
+				String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+				String testTrainLinkFileName = String.format("%s/%s%s_link_test_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+				String testTestLinkFileName = String.format("%s/%s%s_link_test_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+				RTM RTMTest = (LDAConfig.SLModel ?
+						new RTM(modelFileName, parameters) :
+						new RTM(RTMTrain, parameters));
+				RTMTest.readCorpus(testCorpusFileName);
+				RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
+				RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
+				RTMTest.sample(param.m_varMaxIter);
+				RTMTest.addResults(testResults);
+			} else {
+				LDA LDATrain=new LDA(parameters);
+				LDATrain.readCorpus(trainCorpusFileName);
+				LDATrain.sample(param.m_emIter);
+				LDATrain.addResults(trainResults);
+				if (LDAConfig.SLModel)
+				{
+					LDATrain.writeModel(LDAConfig.getModelFileName(modelName));
+				}
 
-            trainResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
+				String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
+				LDA LDATest=(LDAConfig.SLModel?
+						new LDA(LDAConfig.getModelFileName(modelName), parameters):
+						new LDA(LDATrain, parameters));
+				LDATest.readCorpus(testCorpusFileName);
+				LDATest.sample(param.m_varMaxIter);
+				LDATest.addResults(testResults);
+			}
+
+            trainResults.printResults(modelName + " Train PPX: ", LDAResult.PERPLEXITY);
             testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
             perf[i] = testResults.getPerplexity();
         }
