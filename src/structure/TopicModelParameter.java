@@ -18,7 +18,7 @@ public class TopicModelParameter {
 	public double m_rho = 1.0 + 1e-2;
 	
 	public int m_topk = 30;
-	public int m_emIter = 50;
+	public int m_emIter = 70;
 	public int m_number_of_topics = 30;
 	public int m_varMaxIter = 20; // variational inference max iter number
 	
