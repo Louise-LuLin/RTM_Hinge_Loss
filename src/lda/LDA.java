@@ -179,11 +179,19 @@ public class LDA
 			{
 				word=corpus.get(doc).getWord(token);
 				sum=0.0;
+				// log E
+//				for (int topic=0; topic<param.numTopics; topic++)
+//				{
+//					sum+=theta[doc][topic]*phi[topic][word];
+//				}
+//				logLikelihood+=Math.log(sum);
+
+				//E log
 				for (int topic=0; topic<param.numTopics; topic++)
 				{
-					sum+=theta[doc][topic]*phi[topic][word];
+					sum+=theta[doc][topic]* Math.log(phi[topic][word]);
 				}
-				logLikelihood+=Math.log(sum);
+				logLikelihood+=sum;
 			}
 		}
 	}
