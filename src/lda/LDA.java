@@ -224,6 +224,37 @@ public class LDA
 		}
 	}
 	
+//	public void getNumTestWords()
+//	{
+//		if (type==TRAIN)
+//		{
+//			numTestWords=numWords;
+//		}
+//		else
+//		{
+//			numTestWords=0;
+//			for (LDADoc doc : corpus)
+//			{
+//				numTestWords+=doc.docLength()/2;
+//			}
+//		}
+//	}
+	
+//	public int getStartPos()
+//	{
+//		return (type==TRAIN ? 0 : 1);
+//	}
+//
+//	public int getSampleSize(int docLength)
+//	{
+//		return (type==TRAIN ? docLength : (docLength+1)/2);
+//	}
+//
+//	public int getSampleInterval()
+//	{
+//		return (type==TRAIN ? 1 : 2);
+//	}
+
 	public void getNumTestWords()
 	{
 		if (type==TRAIN)
@@ -235,24 +266,24 @@ public class LDA
 			numTestWords=0;
 			for (LDADoc doc : corpus)
 			{
-				numTestWords+=doc.docLength()/2;
+				numTestWords+=doc.docLength();
 			}
 		}
 	}
-	
+
 	public int getStartPos()
 	{
-		return (type==TRAIN ? 0 : 1);
+		return (type==TRAIN ? 0 : 0);
 	}
-	
+
 	public int getSampleSize(int docLength)
 	{
-		return (type==TRAIN ? docLength : (docLength+1)/2);
+		return (type==TRAIN ? docLength : docLength);
 	}
-	
+
 	public int getSampleInterval()
 	{
-		return (type==TRAIN ? 1 : 2);
+		return (type==TRAIN ? 1 : 1);
 	}
 	
 	public String topWords(int topic, int numTopWords)
