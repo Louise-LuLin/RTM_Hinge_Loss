@@ -466,7 +466,7 @@ public class RTM extends LDA
                     outputFolder, i, param.m_number_of_topics, coldFlagStr);
             (new File(userEmbedFileName)).getParentFile().mkdirs();
 
-            if(param.m_topicmodel.equals("RTM")) {
+            if(param.m_topicmodel.startsWith("RTM")) {
 				RTM RTMTrain = new RTM(parameters);
 				RTMTrain.readCorpus(trainCorpusFileName);
 				RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);

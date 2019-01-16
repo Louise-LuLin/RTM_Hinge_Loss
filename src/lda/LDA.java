@@ -95,8 +95,8 @@ public class LDA
 			{
 				sampleDoc(doc);
 			}
-			computeLogLikelihood();
-			perplexity=Math.exp(-logLikelihood/numTestWords);
+			double term_log = computeLogLikelihood();
+			perplexity=Math.exp(-term_log/numTestWords);
 			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity);
 		}
 		
@@ -160,8 +160,9 @@ public class LDA
 		result.add(LDAResult.PERPLEXITY, perplexity);
 	}
 	
-	public void computeLogLikelihood()
+	public double computeLogLikelihood()
 	{
+		double term_loglikelihood = 0;
 		computeTheta();
 		if (type==TRAIN)
 		{
@@ -170,6 +171,7 @@ public class LDA
 		
 		int word;
 		double sum;
+		int curTopic;
 		logLikelihood=0.0;
 		for (int doc=0; doc<numDocs; doc++)
 		{
@@ -178,22 +180,24 @@ public class LDA
 			for (int token=startPos; token<corpus.get(doc).docLength(); token+=interval)
 			{
 				word=corpus.get(doc).getWord(token);
+				curTopic=corpus.get(doc).getTopicAssign(token);
 				sum=0.0;
-				// log E
-//				for (int topic=0; topic<param.numTopics; topic++)
-//				{
-//					sum+=theta[doc][topic]*phi[topic][word];
-//				}
-//				logLikelihood+=Math.log(sum);
-
-				//E log
+				// log E p(z)
 				for (int topic=0; topic<param.numTopics; topic++)
 				{
-					sum+=theta[doc][topic]* Math.log(phi[topic][word]);
+					sum+=theta[doc][topic]*phi[topic][word];
 				}
-				logLikelihood+=sum;
+				logLikelihood+=Math.log(sum);
+
+				//E log p(z)
+				for (int topic=0; topic<param.numTopics; topic++)
+				{
+					term_loglikelihood+=theta[doc][topic]* Math.log(phi[topic][word]);
+				}
 			}
 		}
+
+		return term_loglikelihood;
 	}
 	
 	public void computeTheta()
