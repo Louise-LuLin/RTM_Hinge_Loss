@@ -189,15 +189,15 @@ public class LDA
 				}
 				logLikelihood+=Math.log(sum);
 
-				//E log p(z)
-				for (int topic=0; topic<param.numTopics; topic++)
-				{
-					term_loglikelihood+=theta[doc][topic]* Math.log(phi[topic][word]);
-				}
+//				//E log p(z)
+//				for (int topic=0; topic<param.numTopics; topic++)
+//				{
+//					term_loglikelihood+=theta[doc][topic]* Math.log(phi[topic][word]);
+//				}
 			}
 		}
 
-		return term_loglikelihood;
+		return logLikelihood;
 	}
 	
 	public void computeTheta()
