@@ -145,13 +145,16 @@ public class LDA
 	
 	public double topicUpdating(int docIdx, int topic, int vocab)
 	{
-		if (type==TRAIN)
-		{
-			return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
-					(param.beta+topics.get(topic).vocabCounts[vocab])/
-					(param.beta*param.numVocab+topics.get(topic).totalTokens);
-		}
-		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*phi[topic][vocab];
+//		if (type==TRAIN)
+//		{
+//			return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
+//					(param.beta+topics.get(topic).vocabCounts[vocab])/
+//					(param.beta*param.numVocab+topics.get(topic).totalTokens);
+//		}
+//		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*phi[topic][vocab];
+		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
+				(param.beta+topics.get(topic).vocabCounts[vocab])/
+				(param.beta*param.numVocab+topics.get(topic).totalTokens);
 	}
 	
 	public void addResults(LDAResult result)
@@ -164,10 +167,11 @@ public class LDA
 	{
 		double term_loglikelihood = 0;
 		computeTheta();
-		if (type==TRAIN)
-		{
-			computePhi();
-		}
+//		if (type==TRAIN)
+//		{
+//			computePhi();
+//		}
+		computePhi();
 		
 		int word;
 		double sum;
