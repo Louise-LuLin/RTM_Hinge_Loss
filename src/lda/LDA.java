@@ -292,7 +292,13 @@ public class LDA
 	
 	public String topWords(int topic, int numTopWords)
 	{
-		String result="Topic "+topic+":";
+		double total = 0;
+		for (int topic_i=0; topic_i<param.numTopics; topic_i++)
+		{
+			total += topics.get(topic_i).totalTokens;
+		}
+
+		String result=String.format("Topic %d (%f): ", topic, (double)topics.get(topic).totalTokens/total);
 		LDAWord words[]=new LDAWord[param.numVocab];
 		for (int vocab=0; vocab<param.numVocab; vocab++)
 		{
@@ -302,7 +308,8 @@ public class LDA
 		Arrays.sort(words);
 		for (int i=0; i<numTopWords; i++)
 		{
-			result+="   "+words[i];
+			double prob = (double)words[i].count/topics.get(topic).totalTokens;
+			result+=String.format("\t%s(%f)", words[i].toString(), prob);
 		}
 		return result;
 	}
