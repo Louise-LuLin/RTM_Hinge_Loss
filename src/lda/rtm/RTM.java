@@ -495,7 +495,7 @@ public class RTM extends LDA
 				RTMTest.readCorpus(testCorpusFileName);
 				RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
 				RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-				RTMTest.sample(param.m_varMaxIter);
+				RTMTest.sample(param.m_emIter);
 				RTMTest.addResults(testResults);
 			} else {
 				LDA LDATrain=new LDA(parameters);
@@ -512,7 +512,7 @@ public class RTM extends LDA
 						new LDA(LDAConfig.getModelFileName(modelName), parameters):
 						new LDA(LDATrain, parameters));
 				LDATest.readCorpus(testCorpusFileName);
-				LDATest.sample(param.m_varMaxIter);
+				LDATest.sample(param.m_emIter);
 				LDATest.addResults(testResults);
 			}
 
