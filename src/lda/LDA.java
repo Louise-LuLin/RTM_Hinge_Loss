@@ -8,10 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import cc.mallet.util.Randoms;
-import lda.util.LDADoc;
-import lda.util.LDAResult;
-import lda.util.LDATopic;
-import lda.util.LDAWord;
+import lda.util.*;
 import utility.Util;
 import utility.MathUtil;
 
@@ -99,6 +96,19 @@ public class LDA
 			perplexity=Math.exp(-term_log/numTestWords);
 			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity);
 		}
+
+		if (type == TEST) {
+			double likelihood = 0;
+			for (int iteration = 1; iteration <= 20; iteration++) {
+				for (int doc = 0; doc < numDocs; doc++) {
+					sampleDoc(doc);
+				}
+				likelihood += computeSampleLogLikelihood();
+			}
+			likelihood /= 20;
+			perplexity = Math.exp(-likelihood / numTestWords);
+			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
+		}
 		
 		if (type==TRAIN)
 		{
@@ -167,12 +177,11 @@ public class LDA
 	{
 		double term_loglikelihood = 0;
 		computeTheta();
-//		if (type==TRAIN)
-//		{
-//			computePhi();
-//		}
-		computePhi();
-		
+		if (type==TRAIN)
+		{
+			computePhi();
+		}
+
 		int word;
 		double sum;
 		int curTopic;
@@ -202,6 +211,39 @@ public class LDA
 		}
 
 		return logLikelihood;
+	}
+
+	public double computeSampleLogLikelihood()
+	{
+		double likelihood = 0;
+
+		int word;
+		double sum;
+		int curTopic;
+		for (int doc=0; doc<numDocs; doc++)
+		{
+			int startPos=getStartPos();
+			int interval=getSampleInterval();
+			int docLen = corpus.get(doc).docLength();
+
+			likelihood += Utils.lgamma(docLen * param.beta) - docLen * Utils.lgamma(param.beta)
+					+ Utils.lgamma(param.alphaSum) / param.numTopics;
+			for (int token=startPos; token<docLen; token+=interval)
+			{
+				word=corpus.get(doc).getWord(token);
+				curTopic=corpus.get(doc).getTopicAssign(token);
+				likelihood +=  - Utils.lgamma(alpha[curTopic]);
+
+				likelihood += Utils.lgamma(param.beta+topics.get(curTopic).vocabCounts[word])
+						- Utils.lgamma(param.beta*param.numVocab+topics.get(curTopic).totalTokens) / docLen;
+
+				likelihood += Utils.lgamma(alpha[curTopic]+corpus.get(doc).topicCounts[curTopic])
+						- Utils.lgamma(param.alphaSum+docLen) / param.numTopics;
+
+			}
+		}
+
+		return likelihood;
 	}
 	
 	public void computeTheta()
