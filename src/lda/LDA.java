@@ -103,7 +103,7 @@ public class LDA
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
-				likelihood += computeLogLikelihood();
+				likelihood += computeSampleLogLikelihood();
 			}
 			likelihood /= 20;
 			perplexity = Math.exp(-likelihood / numTestWords);
@@ -230,14 +230,16 @@ public class LDA
 			{
 				word=corpus.get(doc).getWord(token);
 				curTopic=corpus.get(doc).getTopicAssign(token);
-				likelihood +=  - Utils.lgamma(alpha[curTopic]);
 
 				likelihood += Utils.lgamma(param.beta+topics.get(curTopic).vocabCounts[word])
 						- Utils.lgamma(param.beta*param.numVocab+topics.get(curTopic).totalTokens) / docLen;
 
-				likelihood += Utils.lgamma(alpha[curTopic]+corpus.get(doc).topicCounts[curTopic])
-						- Utils.lgamma(param.alphaSum+docLen) / param.numTopics;
+			}
 
+			for(int topic = 0; topic<param.numTopics; topic++){
+				likelihood +=  - Utils.lgamma(alpha[topic]);
+				likelihood += Utils.lgamma(alpha[topic]+corpus.get(doc).topicCounts[topic])
+						- Utils.lgamma(param.alphaSum+docLen) / param.numTopics;
 			}
 		}
 

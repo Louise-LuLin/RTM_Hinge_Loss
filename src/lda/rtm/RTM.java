@@ -468,17 +468,19 @@ public class RTM extends LDA
 
             if(param.m_topicmodel.startsWith("RTM")) {
 				RTM RTMTrain = new RTM(parameters);
-				RTMTrain.readCorpus(trainCorpusFileName);
-				RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
-				RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
-				RTMTrain.sample(param.m_emIter);
-				RTMTrain.addResults(trainResults);
-				if (LDAConfig.SLModel) {
-					RTMTrain.writeModel(modelFileName);
-				}
-				if (param.m_mode.equals("CVlink")) {
-					RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
-					continue;
+            	if(param.m_flag_tune) {
+					RTMTrain.readCorpus(trainCorpusFileName);
+					RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
+					RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
+					RTMTrain.sample(param.m_emIter);
+					RTMTrain.addResults(trainResults);
+					if (LDAConfig.SLModel) {
+						RTMTrain.writeModel(modelFileName);
+					}
+					if (param.m_mode.equals("CVlink")) {
+						RTMTrain.writeUserEmbed(userEmbedFileName, userIdIdxFileName);
+						continue;
+					}
 				}
 
 				String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
