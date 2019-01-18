@@ -117,12 +117,11 @@ public class RTM extends LDA
 			computeLogLikelihood();
 			perplexity=Math.exp(-logLikelihood/numTestWords);
 			
-//			if (type==TRAIN)
-//			{
-//				optimize();
-//			}
-			optimize();
-			
+			if (type==TRAIN)
+			{
+				optimize();
+			}
+
 			if (iteration%param.showPLRInterval==0) computePLR();
 			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity+"\tPLR: "+PLR);
 		}
@@ -195,20 +194,16 @@ public class RTM extends LDA
 	public double topicUpdating(int doc, int topic, int vocab)
 	{
 		double score=0.0;
-//		if (type==TRAIN)
-//		{
-//			score=(alpha[topic]+corpus.get(doc).topicCounts[topic])*
-//					(param.beta+topics.get(topic).vocabCounts[vocab])/
-//					(param.beta*param.numVocab+topics.get(topic).totalTokens);
-//		}
-//		else
-//		{
-//			score=(alpha[topic]+corpus.get(doc).topicCounts[topic])*phi[topic][vocab];
-//		}
-
-		score=(alpha[topic]+corpus.get(doc).topicCounts[topic])*
-				(param.beta+topics.get(topic).vocabCounts[vocab])/
-				(param.beta*param.numVocab+topics.get(topic).totalTokens);
+		if (type==TRAIN)
+		{
+			score=(alpha[topic]+corpus.get(doc).topicCounts[topic])*
+					(param.beta+topics.get(topic).vocabCounts[vocab])/
+					(param.beta*param.numVocab+topics.get(topic).totalTokens);
+		}
+		else
+		{
+			score=(alpha[topic]+corpus.get(doc).topicCounts[topic])*phi[topic][vocab];
+		}
 		
 		int i=0;
 		double temp;

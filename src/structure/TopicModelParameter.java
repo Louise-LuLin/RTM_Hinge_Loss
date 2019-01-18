@@ -18,7 +18,7 @@ public class TopicModelParameter {
 	public double m_rho = 1.0 + 1e-2;
 	
 	public int m_topk = 30;
-	public int m_emIter = 70;
+	public int m_emIter = 30;
 	public int m_number_of_topics = 30;
 	public int m_varMaxIter = 20; // variational inference max iter number
 	
@@ -36,7 +36,7 @@ public class TopicModelParameter {
 	public boolean m_flag_coldstart = false;
 
 	//item tagging
-	public String m_mode;
+	public String m_mode = "CVdoc";
 		
 	public TopicModelParameter(String argv[]){
 		

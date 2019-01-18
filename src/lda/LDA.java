@@ -103,7 +103,7 @@ public class LDA
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
-				likelihood += computeSampleLogLikelihood();
+				likelihood += computeLogLikelihood();
 			}
 			likelihood /= 20;
 			perplexity = Math.exp(-likelihood / numTestWords);
@@ -155,16 +155,14 @@ public class LDA
 	
 	public double topicUpdating(int docIdx, int topic, int vocab)
 	{
-//		if (type==TRAIN)
-//		{
-//			return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
-//					(param.beta+topics.get(topic).vocabCounts[vocab])/
-//					(param.beta*param.numVocab+topics.get(topic).totalTokens);
-//		}
-//		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*phi[topic][vocab];
-		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
-				(param.beta+topics.get(topic).vocabCounts[vocab])/
-				(param.beta*param.numVocab+topics.get(topic).totalTokens);
+		if (type==TRAIN)
+		{
+			return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*
+					(param.beta+topics.get(topic).vocabCounts[vocab])/
+					(param.beta*param.numVocab+topics.get(topic).totalTokens);
+		}
+		return (alpha[topic]+corpus.get(docIdx).topicCounts[topic])*phi[topic][vocab];
+
 	}
 	
 	public void addResults(LDAResult result)
