@@ -127,6 +127,7 @@ public class RTM extends LDA
 			double likelihood = 0;
 			for (int iteration = 1; iteration <= numIters; iteration++) {
 				for (int doc = 0; doc < numDocs; doc++) {
+					weight = new double[trainEdgeWeights.get(doc).size()];
 					sampleDoc(doc);
 				}
 				likelihood += computeLogLikelihood();
