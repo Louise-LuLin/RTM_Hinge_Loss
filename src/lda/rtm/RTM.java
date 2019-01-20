@@ -108,36 +108,31 @@ public class RTM extends LDA
 	
 	public void sample(int numIters)
 	{
-		for (int iteration=1; iteration<=numIters; iteration++)
-		{
-			for (int doc=0; doc<numDocs; doc++)
-			{
-				weight=new double[trainEdgeWeights.get(doc).size()];
-				sampleDoc(doc);
-			}
-			
-			computeLogLikelihood();
-			perplexity=Math.exp(-logLikelihood/numTestWords);
-			
-			if (type==TRAIN)
-			{
+		if (type == TRAIN) {
+			for (int iteration = 1; iteration <= numIters; iteration++) {
+				for (int doc = 0; doc < numDocs; doc++) {
+					weight = new double[trainEdgeWeights.get(doc).size()];
+					sampleDoc(doc);
+				}
+
+				computeLogLikelihood();
+				perplexity = Math.exp(-logLikelihood / numTestWords);
+
 				optimize();
+
+				if (iteration % param.showPLRInterval == 0) computePLR();
+				Util.println("<" + iteration + ">" + "\tLog-LLD: " + logLikelihood + "\tPPX: " + perplexity + "\tPLR: " + PLR);
 			}
-
-			if (iteration%param.showPLRInterval==0) computePLR();
-			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity+"\tPLR: "+PLR);
-		}
-
-		if (type == TEST) {
+		} else {
 			double likelihood = 0;
-			for (int iteration = 1; iteration <= 20; iteration++) {
+			for (int iteration = 1; iteration <= numIters; iteration++) {
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
-				likelihood += computeSampleLogLikelihood();
+				likelihood += computeLogLikelihood();
 			}
-			likelihood /= 20;
-			perplexity = Math.exp(-likelihood / numTestWords);
+			likelihood /= numIters;
+			perplexity = Math.exp(-likelihood/numTestWords);
 			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
 		}
 		
@@ -513,7 +508,7 @@ public class RTM extends LDA
 					RTMTest.readCorpus(testCorpusFileName);
 					RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
 					RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-					RTMTest.sample(param.m_emIter);
+					RTMTest.sample(param.m_varMaxIter);
 					RTMTest.addResults(testResults);
 				}
 
@@ -535,7 +530,7 @@ public class RTM extends LDA
 							new LDA(LDAConfig.getModelFileName(modelName), parameters) :
 							new LDA(LDATrain, parameters));
 					LDATest.readCorpus(testCorpusFileName);
-					LDATest.sample(param.m_emIter);
+					LDATest.sample(param.m_varMaxIter);
 					LDATest.addResults(testResults);
 				}
 			}
