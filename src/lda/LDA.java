@@ -86,27 +86,25 @@ public class LDA
 	
 	public void sample(int numIters)
 	{
-		for (int iteration=1; iteration<=numIters; iteration++)
-		{
-			for (int doc=0; doc<numDocs; doc++)
-			{
-				sampleDoc(doc);
-			}
-			double term_log = computeLogLikelihood();
-			perplexity=Math.exp(-term_log/numTestWords);
-			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity);
-		}
-
-		if (type == TEST) {
-			double likelihood = 0;
-			for (int iteration = 1; iteration <= 20; iteration++) {
+		if (type == TRAIN) {
+			for (int iteration = 1; iteration <= numIters; iteration++) {
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
-				likelihood += computeSampleLogLikelihood();
+				double term_log = computeLogLikelihood();
+				perplexity = Math.exp(-term_log / numTestWords);
+				Util.println("<" + iteration + ">" + "\tLog-LLD: " + logLikelihood + "\tPPX: " + perplexity);
 			}
-			likelihood /= 20;
-			perplexity = Math.exp(-likelihood / numTestWords);
+		} else {
+			double likelihood = 0;
+			for (int iteration = 1; iteration <= 10; iteration++) {
+				for (int doc = 0; doc < numDocs; doc++) {
+					sampleDoc(doc);
+				}
+				likelihood += computeLogLikelihood();
+			}
+			likelihood /= 10;
+			perplexity = Math.exp(-likelihood/numTestWords);
 			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
 		}
 		
@@ -218,28 +216,29 @@ public class LDA
 		int word;
 		double sum;
 		int curTopic;
+		double[] log_pz = new double[param.numTopics];
+
 		for (int doc=0; doc<numDocs; doc++)
 		{
 			int startPos=getStartPos();
 			int interval=getSampleInterval();
 			int docLen = corpus.get(doc).docLength();
 
-			likelihood += Utils.lgamma(docLen * param.beta) - docLen * Utils.lgamma(param.beta)
-					+ Utils.lgamma(param.alphaSum) / param.numTopics;
-			for (int token=startPos; token<docLen; token+=interval)
-			{
+			for (int token=startPos; token<docLen; token+=interval) {
 				word=corpus.get(doc).getWord(token);
-				curTopic=corpus.get(doc).getTopicAssign(token);
+//					curTopic=corpus.get(doc).getTopicAssign(token);
 
-				likelihood += Utils.lgamma(param.beta+topics.get(curTopic).vocabCounts[word])
-						- Utils.lgamma(param.beta*param.numVocab+topics.get(curTopic).totalTokens) / docLen;
+				likelihood += Utils.lgamma(param.alphaSum) / param.numTopics - Utils.lgamma(alpha[0])
+						+ Utils.lgamma(docLen * param.beta)/ docLen - Utils.lgamma(param.beta);
+				double[] temps = new double[param.numTopics];
+				for (int topic=0; topic<param.numTopics; topic++) {
+					temps[topic] = Utils.lgamma(alpha[topic]+corpus.get(doc).topicCounts[topic])
+							- Utils.lgamma(param.alphaSum+docLen) / param.numTopics
+							+ Utils.lgamma(param.beta+topics.get(topic).vocabCounts[word])
+							- Utils.lgamma(param.beta * docLen+topics.get(topic).totalTokens);
+				}
 
-			}
-
-			for(int topic = 0; topic<param.numTopics; topic++){
-				likelihood +=  - Utils.lgamma(alpha[topic]);
-				likelihood += Utils.lgamma(alpha[topic]+corpus.get(doc).topicCounts[topic])
-						- Utils.lgamma(param.alphaSum+docLen) / param.numTopics;
+				likelihood += Utils.logSum(temps);
 			}
 		}
 

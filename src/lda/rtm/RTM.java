@@ -125,6 +125,19 @@ public class RTM extends LDA
 			if (iteration%param.showPLRInterval==0) computePLR();
 			Util.println("<"+iteration+">"+"\tLog-LLD: "+logLikelihood+"\tPPX: "+perplexity+"\tPLR: "+PLR);
 		}
+
+		if (type == TEST) {
+			double likelihood = 0;
+			for (int iteration = 1; iteration <= 20; iteration++) {
+				for (int doc = 0; doc < numDocs; doc++) {
+					sampleDoc(doc);
+				}
+				likelihood += computeSampleLogLikelihood();
+			}
+			likelihood /= 20;
+			perplexity = Math.exp(-likelihood / numTestWords);
+			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
+		}
 		
 		if (type==TRAIN)
 		{
