@@ -97,13 +97,13 @@ public class LDA
 			}
 		} else {
 			double likelihood = 0;
-			for (int iteration = 1; iteration <= 10; iteration++) {
+			for (int iteration = 1; iteration <= 15; iteration++) {
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
 				likelihood += computeLogLikelihood();
 			}
-			likelihood /= 10;
+			likelihood /= 15;
 			perplexity = Math.exp(-likelihood/numTestWords);
 			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
 		}
