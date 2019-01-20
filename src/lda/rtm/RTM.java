@@ -2,6 +2,7 @@ package lda.rtm;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -12,6 +13,7 @@ import lda.LDAConfig;
 import lda.LDAParam;
 import lda.rtm.util.RTMDocProb;
 import lda.rtm.util.RTMFunction;
+import lda.util.Utils;
 import structure.TopicModelParameter;
 import utility.MathUtil;
 import utility.Util;
@@ -456,7 +458,11 @@ public class RTM extends LDA
         String folder = String.format("%s/%s/%s", param.m_prefix, param.m_source, param.m_set);
         String fvFile = String.format("%s/%s/%s_features.txt", param.m_prefix, param.m_source, param.m_source);
         String inputFolder = String.format("%s/RTM", folder);
-        String outputFolder = String.format("%s/output/%s/%s/", param.m_prefix, param.m_source, param.m_set);
+		String outputFolder = String.format("%s/output/%s/%s/", param.m_prefix, param.m_source, param.m_set);
+		int group_num = 1;
+		if (param.m_flag_coldstart && param.m_mode.equals("CVdoc")){
+			group_num = 3;
+		}
 
         String seg[] = Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
         String modelName = seg[seg.length - 1];
@@ -465,9 +471,9 @@ public class RTM extends LDA
         LDAResult trainResults = new LDAResult();
         LDAResult testResults = new LDAResult();
 
-        double[] perf = new double[param.m_crossV];
         for (int i = 0; i < param.m_crossV; i++) {
-            System.out.format("====== Fold %s =====\n", i);
+			System.out.format("====================\n[Info]%s Fold No. %d: \n",
+					param.m_flag_coldstart?"COLD start":"", i);
             String coldFlagStr = param.m_flag_coldstart?"_coldstart":"";
             String trainCorpusFileName = String.format("%s/%s%s_corpus_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
             String trainLinkFileName = String.format("%s/%s%s_link_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
@@ -496,62 +502,107 @@ public class RTM extends LDA
 					}
 				}
 
-				String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-				String testTrainLinkFileName = String.format("%s/%s%s_link_test_train_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-				String testTestLinkFileName = String.format("%s/%s%s_link_test_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-				RTM RTMTest = (LDAConfig.SLModel ?
-						new RTM(modelFileName, parameters) :
-						new RTM(RTMTrain, parameters));
-				RTMTest.readCorpus(testCorpusFileName);
-				RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
-				RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
-				RTMTest.sample(param.m_emIter);
-				RTMTest.addResults(testResults);
-			} else {
-				LDA LDATrain=new LDA(parameters);
-				LDATrain.readCorpus(trainCorpusFileName);
-				LDATrain.sample(param.m_emIter);
-				LDATrain.addResults(trainResults);
-				if (LDAConfig.SLModel)
-				{
-					LDATrain.writeModel(LDAConfig.getModelFileName(modelName));
+            	for (int k = 0; k < group_num; k++) {
+            		String groupstr = group_num > 1 ? String.format("_%d", k) : "";
+					String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d%s.txt", inputFolder, param.m_mode, coldFlagStr, i, groupstr);
+					String testTrainLinkFileName = String.format("%s/%s%s_link_test_train_%d%s.txt", inputFolder, param.m_mode, coldFlagStr, i, groupstr);
+					String testTestLinkFileName = String.format("%s/%s%s_link_test_test_%d%s.txt", inputFolder, param.m_mode, coldFlagStr, i, groupstr);
+					RTM RTMTest = (LDAConfig.SLModel ?
+							new RTM(modelFileName, parameters) :
+							new RTM(RTMTrain, parameters));
+					RTMTest.readCorpus(testCorpusFileName);
+					RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
+					RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
+					RTMTest.sample(param.m_emIter);
+					RTMTest.addResults(testResults);
 				}
 
-				String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d.txt", inputFolder, param.m_mode, coldFlagStr, i);
-				LDA LDATest=(LDAConfig.SLModel?
-						new LDA(LDAConfig.getModelFileName(modelName), parameters):
-						new LDA(LDATrain, parameters));
-				LDATest.readCorpus(testCorpusFileName);
-				LDATest.sample(param.m_emIter);
-				LDATest.addResults(testResults);
+			} else {
+				LDA LDATrain=new LDA(parameters);
+				if(param.m_flag_tune) {
+					LDATrain.readCorpus(trainCorpusFileName);
+					LDATrain.sample(param.m_emIter);
+					LDATrain.addResults(trainResults);
+					if (LDAConfig.SLModel) {
+						LDATrain.writeModel(LDAConfig.getModelFileName(modelName));
+					}
+				}
+
+				for (int k = 0; k < group_num; k++) {
+					String groupstr = group_num > 1 ? String.format("_%d", k) : "";
+					String testCorpusFileName = String.format("%s/%s%s_corpus_test_%d%s.txt", inputFolder, param.m_mode, coldFlagStr, i, groupstr);
+					LDA LDATest = (LDAConfig.SLModel ?
+							new LDA(LDAConfig.getModelFileName(modelName), parameters) :
+							new LDA(LDATrain, parameters));
+					LDATest.readCorpus(testCorpusFileName);
+					LDATest.sample(param.m_emIter);
+					LDATest.addResults(testResults);
+				}
 			}
 
             trainResults.printResults(modelName + " Train PPX: ", LDAResult.PERPLEXITY);
             testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
-            perf[i] = testResults.getPerplexity();
         }
 
-        double mean = 0;
-        double var = 0;
-        int invalid = 0;
-        for (int i = 0; i < perf.length; i++) {
-            if (Double.isNaN(perf[i]) || Double.isInfinite(perf[i])) {
-                invalid += 1;
-                continue;
-            }
-            mean += perf[i];
-        }
-        int valid = perf.length - invalid;
-        mean = valid > 0 ? mean / valid : 0;
-        for (int i = 0; i < perf.length; i++) {
-            if (Double.isNaN(perf[i]) || Double.isInfinite(perf[i])) {
-                continue;
-            }
-            var += (perf[i] - mean) * (perf[i] - mean);
-        }
-        var = valid > 0 ? Math.sqrt(var / valid) : 0;
+		double[][] perf = new double[param.m_crossV][group_num];
+		double[][] like = new double[param.m_crossV][group_num];
+		ArrayList<Double> perps = testResults.perplexity;
+		ArrayList<Double> likes = testResults.logLikelihood;
+        System.out.format("[Stat]total perplexity dimension = %d, group_num = %d, crossV = %d\n",
+				perps.size(), group_num, param.m_crossV);
+        for(int i = 0; i < param.m_crossV; i++){
+        	for(int k = 0; k < group_num; k++){
+        		perf[i][k] = perps.get(i + k);
+        		like[i][k] = likes.get(i + k);
+			}
+		}
 
-        System.out.format("[Stat]Perplexity %.3f+/-%.3f\n", mean, var);
+		//output the performance statistics
+		System.out.println();
+		double mean = 0, var = 0;
+		int[] invalid_label = new int[like.length];
+		for(int j = 0; j < group_num; j++) {
+			System.out.format("Part %d -----------------", j);
+			Arrays.fill(invalid_label, 0);
+			for (int i = 0; i < like.length; i++) {
+				if (Double.isNaN(like[i][j]) || Double.isNaN(perf[i][j]) || perf[i][j] <= 0 )
+					invalid_label[i]=1;
+			}
+			int validLen = like.length - Utils.sumOfArray(invalid_label);
+			System.out.format("Valid folds: %d\n", validLen);
+
+			mean=0;
+			var=0;
+			for (int i = 0; i < like.length; i++) {
+				if (invalid_label[i]<1)
+					mean += like[i][j];
+			}
+			if(validLen>0)
+				mean /= validLen;
+			for (int i = 0; i < like.length; i++) {
+				if (invalid_label[i]<1)
+					var += (like[i][j] - mean) * (like[i][j] - mean);
+			}
+			if(validLen>0)
+				var = Math.sqrt(var / validLen);
+			System.out.format("[Stat]Loglikelihood %.3f+/-%.3f\n", mean, var);
+
+			mean = 0;
+			var = 0;
+			for (int i = 0; i < perf.length; i++) {
+				if (invalid_label[i]<1)
+					mean += perf[i][j];
+			}
+			if(validLen>0)
+				mean /= validLen;
+			for (int i = 0; i < perf.length; i++) {
+				if (invalid_label[i]<1)
+					var += (perf[i][j] - mean) * (perf[i][j] - mean);
+			}
+			if(validLen>0)
+				var = Math.sqrt(var / validLen);
+			System.out.format("[Stat]Perplexity %.3f+/-%.3f\n", mean, var);
+		}
 
 		/*String seg[]=Thread.currentThread().getStackTrace()[1].getClassName().split("\\.");
 		String modelName=seg[seg.length-1];
