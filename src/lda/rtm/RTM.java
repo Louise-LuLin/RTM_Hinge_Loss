@@ -130,9 +130,9 @@ public class RTM extends LDA
 					weight = new double[trainEdgeWeights.get(doc).size()];
 					sampleDoc(doc);
 				}
-				likelihood += computeLogLikelihood();
+				likelihood = computeLogLikelihood();
 			}
-			likelihood /= numIters;
+//			likelihood /= numIters;
 			perplexity = Math.exp(-likelihood/numTestWords);
 			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
 		}
