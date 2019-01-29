@@ -464,8 +464,8 @@ public class RTM extends LDA
         String modelName = seg[seg.length - 1];
         LDAParam parameters = new LDAParam(fvFile);
         parameters.numTopics = param.m_number_of_topics;
-        LDAResult trainResults = new LDAResult();
-        LDAResult testResults = new LDAResult();
+		double[][] perf = new double[param.m_crossV][group_num];
+		double[][] like = new double[param.m_crossV][group_num];
 
         for (int i = 0; i < param.m_crossV; i++) {
 			System.out.format("====================\n[Info]%s Fold No. %d: \n",
@@ -488,7 +488,6 @@ public class RTM extends LDA
 					RTMTrain.readGraph(trainLinkFileName, TRAIN_GRAPH);
 					RTMTrain.readGraph(trainLinkFileName, TEST_GRAPH);
 					RTMTrain.sample(param.m_emIter);
-					RTMTrain.addResults(trainResults);
 					if (LDAConfig.SLModel) {
 						RTMTrain.writeModel(modelFileName);
 					}
@@ -510,7 +509,8 @@ public class RTM extends LDA
 					RTMTest.readGraph(testTrainLinkFileName, TRAIN_GRAPH);
 					RTMTest.readGraph(testTestLinkFileName, TEST_GRAPH);
 					RTMTest.sample(param.m_varMaxIter);
-					RTMTest.addResults(testResults);
+					perf[i][k] = RTMTest.perplexity;
+					like[i][k] = RTMTest.logLikelihood;
 				}
 
 			} else {
@@ -518,7 +518,6 @@ public class RTM extends LDA
 				if(param.m_flag_tune) {
 					LDATrain.readCorpus(trainCorpusFileName);
 					LDATrain.sample(param.m_emIter);
-					LDATrain.addResults(trainResults);
 					if (LDAConfig.SLModel) {
 						LDATrain.writeModel(LDAConfig.getModelFileName(modelName));
 					}
@@ -532,28 +531,12 @@ public class RTM extends LDA
 							new LDA(LDATrain, parameters));
 					LDATest.readCorpus(testCorpusFileName);
 					LDATest.sample(param.m_varMaxIter);
-					LDATest.addResults(testResults);
 				}
 			}
 
 //            trainResults.printResults(modelName + " Train PPX: ", LDAResult.PERPLEXITY);
 //            testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
         }
-
-		double[][] perf = new double[param.m_crossV][group_num];
-		double[][] like = new double[param.m_crossV][group_num];
-		ArrayList<Double> perps = testResults.perplexity;
-		ArrayList<Double> likes = testResults.logLikelihood;
-        System.out.format("[Stat]total perplexity dimension = %d, group_num = %d, crossV = %d\n",
-				perps.size(), group_num, param.m_crossV);
-        for(int i = 0; i < param.m_crossV; i++){
-        	for(int k = 0; k < group_num; k++){
-        		perf[i][k] = perps.get(i + k);
-        		like[i][k] = likes.get(i + k);
-				System.out.format("%f\t", perps.get(i + k));
-			}
-			System.out.format("\n");
-		}
 
 		//output the performance statistics
 		System.out.println();
