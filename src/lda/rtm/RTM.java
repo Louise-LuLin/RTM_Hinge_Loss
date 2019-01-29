@@ -536,8 +536,8 @@ public class RTM extends LDA
 				}
 			}
 
-            trainResults.printResults(modelName + " Train PPX: ", LDAResult.PERPLEXITY);
-            testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
+//            trainResults.printResults(modelName + " Train PPX: ", LDAResult.PERPLEXITY);
+//            testResults.printResults(modelName + " Test PPX: ", LDAResult.PERPLEXITY);
         }
 
 		double[][] perf = new double[param.m_crossV][group_num];
@@ -550,53 +550,38 @@ public class RTM extends LDA
         	for(int k = 0; k < group_num; k++){
         		perf[i][k] = perps.get(i + k);
         		like[i][k] = likes.get(i + k);
+				System.out.format("%f\t", perps.get(i + k));
 			}
+			System.out.format("\n");
 		}
 
 		//output the performance statistics
 		System.out.println();
 		double mean = 0, var = 0;
-		int[] invalid_label = new int[like.length];
 		for(int j = 0; j < group_num; j++) {
-			System.out.format("Part %d -----------------", j);
-			Arrays.fill(invalid_label, 0);
-			for (int i = 0; i < like.length; i++) {
-				if (Double.isNaN(like[i][j]) || Double.isNaN(perf[i][j]) || perf[i][j] <= 0 )
-					invalid_label[i]=1;
-			}
-			int validLen = like.length - Utils.sumOfArray(invalid_label);
-			System.out.format("Valid folds: %d\n", validLen);
-
+			System.out.format("Part %d -----------------\n", j);
 			mean=0;
 			var=0;
-			for (int i = 0; i < like.length; i++) {
-				if (invalid_label[i]<1)
-					mean += like[i][j];
+			for (int i = 0; i < param.m_crossV; i++) {
+				mean += like[i][j];
 			}
-			if(validLen>0)
-				mean /= validLen;
-			for (int i = 0; i < like.length; i++) {
-				if (invalid_label[i]<1)
-					var += (like[i][j] - mean) * (like[i][j] - mean);
+			mean /= param.m_crossV;
+			for (int i = 0; i < param.m_crossV; i++) {
+				var += (like[i][j] - mean) * (like[i][j] - mean);
 			}
-			if(validLen>0)
-				var = Math.sqrt(var / validLen);
+			var = Math.sqrt(var / param.m_crossV);
 			System.out.format("[Stat]Loglikelihood %.3f+/-%.3f\n", mean, var);
 
 			mean = 0;
 			var = 0;
-			for (int i = 0; i < perf.length; i++) {
-				if (invalid_label[i]<1)
-					mean += perf[i][j];
+			for (int i = 0; i < param.m_crossV; i++) {
+				mean += perf[i][j];
 			}
-			if(validLen>0)
-				mean /= validLen;
-			for (int i = 0; i < perf.length; i++) {
-				if (invalid_label[i]<1)
-					var += (perf[i][j] - mean) * (perf[i][j] - mean);
+			mean /= param.m_crossV;
+			for (int i = 0; i < param.m_crossV; i++) {
+				var += (perf[i][j] - mean) * (perf[i][j] - mean);
 			}
-			if(validLen>0)
-				var = Math.sqrt(var / validLen);
+			var = Math.sqrt(var / param.m_crossV);
 			System.out.format("[Stat]Perplexity %.3f+/-%.3f\n", mean, var);
 		}
 
