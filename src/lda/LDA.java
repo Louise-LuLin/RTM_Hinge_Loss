@@ -101,9 +101,9 @@ public class LDA
 				for (int doc = 0; doc < numDocs; doc++) {
 					sampleDoc(doc);
 				}
-				likelihood += computeLogLikelihood();
+				likelihood = computeLogLikelihood();
 			}
-			likelihood /= numIters;
+//			likelihood /= numIters;
 			perplexity = Math.exp(-likelihood/numTestWords);
 			Util.println("<sampled perplexity>"+"\tPPX: "+perplexity);
 		}
